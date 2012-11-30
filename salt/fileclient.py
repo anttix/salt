@@ -550,9 +550,16 @@ class RemoteClient(Client):
     '''
     Interact with the salt master file server.
     '''
+    auth_cache = {}
+
     def __init__(self, opts):
         Client.__init__(self, opts)
-        self.auth = salt.crypt.SAuth(opts)
+        key = hash("%s" % sorted(opts.iteritems()))
+        if key in RemoteClient.auth_cache:
+            self.auth = RemoteClient.auth_cache[key]
+        else:
+            self.auth = salt.crypt.SAuth(opts)
+            RemoteClient.auth_cache[key] = self.auth
         self.sreq = salt.payload.SREQ(self.opts['master_uri'])
 
     def get_file(self, path, dest='', makedirs=False, env='base', gzip=None):
